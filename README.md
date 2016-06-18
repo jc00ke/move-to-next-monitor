@@ -15,6 +15,9 @@ chmod +x move-to-next-monitor
 mv move-to-next-monitor /somewhere/in/your/$PATH
 ```
 
+## Code of Conduct
+
+[We have one](code_of_conduct.md), and you're expected to follow it.
 
 ## Support
 

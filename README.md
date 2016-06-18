@@ -7,6 +7,15 @@ in this script. Sweet! Glad it can help others.
 
 I mapped `ctrl+alt+n` to exectute this script.
 
+## Usage
+
+```
+wget https://raw.githubusercontent.com/jc00ke/move-to-next-monitor/master/move-to-next-monitor
+chmod +x move-to-next-monitor
+mv move-to-next-monitor /somewhere/in/your/$PATH
+```
+
+
 ## Support
 
 Since I don't use Xubuntu and therefore don't have a way to test changes, I'm going to rely on others to QA and give me feedback.

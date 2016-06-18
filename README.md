@@ -21,6 +21,6 @@ mv move-to-next-monitor /somewhere/in/your/$PATH
 Since I don't use Xubuntu and therefore don't have a way to test changes, I'm going to rely on others to QA and give me feedback.
 
 ## Thanks
- 
+
 * [icyrock](http://icyrock.com/blog/2012/05/xubuntu-moving-windows-between-monitors/) post for initial development
-* @jordansissel for his excellent [xdotool](https://github.com/jordansissel/xdotool)
+* [@jordansissel](https://github.com/jordansissel) for his excellent [xdotool](https://github.com/jordansissel/xdotool)

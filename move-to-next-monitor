@@ -19,7 +19,8 @@ display_height=`xdotool getdisplaygeometry | cut -d" " -f2`
 window_id=`xdotool getactivewindow`
 
 # Remember if it was maximized.
-window_state=`xprop -id $window_id _NET_WM_STATE | awk '{ print $3 }'`
+window_horz_maxed=`xprop -id $window_id _NET_WM_STATE | grep '_NET_WM_STATE_MAXIMIZED_HORZ'`
+window_vert_maxed=`xprop -id $window_id _NET_WM_STATE | grep '_NET_WM_STATE_MAXIMIZED_VERT'`
 
 # Un-maximize current window so that we can move it
 wmctrl -ir $window_id -b remove,maximized_vert,maximized_horz
@@ -65,6 +66,10 @@ fi
 xdotool windowmove $window_id $new_x $new_y
 
 # Maximize window again, if it was before
-if [ -n "${window_state}" ]; then
+if [ -n "${window_horz_maxed}" -a -n "${window_vert_maxed}" ]; then
   wmctrl -ir $window_id -b add,maximized_vert,maximized_horz
+elif [ -n  "${window_horz_maxed}" ]; then
+  wmctrl -ir $window_id -b add,maximized_horz
+elif [ -n  "${window_vert_maxed}" ]; then
+  wmctrl -ir $window_id -b add,maximized_vert
 fi

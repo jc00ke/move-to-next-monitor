@@ -15,6 +15,13 @@ chmod +x move-to-next-monitor
 mv move-to-next-monitor /somewhere/in/your/$PATH
 ```
 
+## Dependencies
+
+```
+# Xubuntu 16.04
+sudo apt-get install xdotool
+```
+
 ## Code of Conduct
 
 [We have one](code_of_conduct.md), and you're expected to follow it.

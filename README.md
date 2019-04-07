@@ -18,6 +18,9 @@ mv move-to-next-monitor /somewhere/in/your/$PATH
 ## Dependencies
 
 ```
+# Xubuntu 18.04
+sudo apt install xdotool wmctrl
+
 # Xubuntu 16.04
 sudo apt-get install xdotool
 ```

@@ -35,10 +35,25 @@ y_offset=$(xwininfo -id "$window_id" | awk '/Relative upper-left Y:/ { print $4 
 x=$(( x - x_offset))
 y=$(( y - y_offset))
 
-# Compute new X position
-new_x=$((x + display_width))
-# Compute new Y position
-new_y=$((y + display_height))
+# Compute new position
+if [ "$1" = "left" ]; then 
+    if [ "$x" -gt "$display_width" ]; then
+        new_x=$((x - display_width))
+        new_y=$y
+    else
+        exit 0
+    fi
+elif [ "$1" = "right" ]; then
+	if [ "$x" -lt "$(( screen_width - display_width ))" ]; then
+        new_x=$((x + display_width))
+        new_y=$y
+    else
+    	exit 0
+    fi		
+else
+	new_x=$((x + display_width))
+	new_y=$((y + display_height))
+fi
 
 # If we would move off the right-most monitor, we set it to the left one.
 # We also respect the window's width here: moving a window off more than half its width won't happen.

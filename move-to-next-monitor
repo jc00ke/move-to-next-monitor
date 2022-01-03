@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Move the current window to the next monitor.
 #

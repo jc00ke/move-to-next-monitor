@@ -23,6 +23,11 @@ sudo apt install xdotool wmctrl
 
 # Xubuntu 16.04
 sudo apt-get install xdotool
+
+# Arch based (Manjaro / Endeavour OS)
+sudo pacman -S xorg-xwininfo
+sudo pacman -S xdotool
+sudo pacman -S wmctrl
 ```
 
 ## Code of Conduct

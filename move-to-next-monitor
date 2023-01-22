@@ -18,6 +18,11 @@ display_width=$(xdotool getdisplaygeometry | cut -d" " -f1)
 display_height=$(xdotool getdisplaygeometry | cut -d" " -f2)
 window_id=$(xdotool getactivewindow)
 
+# Do not move the desktop window!!!
+if [ "$(xdotool getwindowclassname "$window_id")" == 'xfdesktop' ]; then
+    return 0
+fi
+
 # Remember if it was maximized.
 window_horz_maxed=$(xprop -id "$window_id" _NET_WM_STATE | grep '_NET_WM_STATE_MAXIMIZED_HORZ')
 window_vert_maxed=$(xprop -id "$window_id" _NET_WM_STATE | grep '_NET_WM_STATE_MAXIMIZED_VERT')

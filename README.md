@@ -5,7 +5,7 @@ Script to move windows from one monitor to the next in Xubuntu
 Even though I don't use Xubuntu anymore, people are still interested
 in this script. Sweet! Glad it can help others.
 
-I mapped `ctrl+alt+n` to exectute this script.
+I mapped `ctrl+alt+n` to execute this script.
 
 To move the window the other way, pass `--previous` (or `-p`); `--next` (or `-n`)
 is the default. For example, map `ctrl+alt+n` to `move-to-next-monitor` and

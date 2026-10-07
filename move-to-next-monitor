@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 # Move the current window to the next monitor.
+# With --previous (or -p), move it to the previous monitor instead.
 #
 # Also works only on one X screen (which is the most common case).
 #
@@ -11,6 +12,19 @@
 # checking "-geometry" of "xwininfo -id $window_id" are not sufficient, as
 # the first command does not respect panel/decoration offsets and the second
 # will sometimes give a "-0-0" geometry. This is why we resort to "xwininfo".
+
+usage() {
+    echo "Usage: $(basename "$0") [--next | --previous]"
+    echo "Move the active window to the next (default) or previous monitor."
+}
+
+direction=next
+case "${1:-}" in
+    ""|-n|--next) ;;
+    -p|--previous) direction=previous ;;
+    -h|--help) usage; exit 0 ;;
+    *) usage >&2; exit 1 ;;
+esac
 
 screen_width=$(xdpyinfo | awk '/dimensions:/ { print $2; exit }' | cut -d"x" -f1)
 screen_height=$(xdpyinfo | awk '/dimensions:/ { print $2; exit }' | cut -d"x" -f2)
@@ -35,21 +49,34 @@ y_offset=$(xwininfo -id "$window_id" | awk '/Relative upper-left Y:/ { print $4 
 x=$(( x - x_offset))
 y=$(( y - y_offset))
 
-# Compute new X position
-new_x=$((x + display_width))
-# Compute new Y position
-new_y=$((y + display_height))
-
-# If we would move off the right-most monitor, we set it to the left one.
-# We also respect the window's width here: moving a window off more than half its width won't happen.
 width=$(xdotool getwindowgeometry "$window_id" | awk '/Geometry:/ { print $2 }'|cut -d"x" -f1)
-if [ "$(( new_x + width / 2))" -gt "$screen_width" ]; then
-    new_x=$((new_x - screen_width))
-fi
-
 height=$(xdotool getwindowgeometry "$window_id" | awk '/Geometry:/ { print $2 }'|cut -d"x" -f2)
-if [ "$((new_y + height / 2))" -gt "$screen_height" ]; then
-    new_y=$((new_y - screen_height))
+
+if [ "$direction" = next ]; then
+    # Compute new position
+    new_x=$((x + display_width))
+    new_y=$((y + display_height))
+
+    # If we would move off the right-most monitor, we set it to the left one.
+    # We also respect the window's width here: moving a window off more than half its width won't happen.
+    if [ "$(( new_x + width / 2))" -gt "$screen_width" ]; then
+        new_x=$((new_x - screen_width))
+    fi
+    if [ "$((new_y + height / 2))" -gt "$screen_height" ]; then
+        new_y=$((new_y - screen_height))
+    fi
+else
+    # Compute new position
+    new_x=$((x - display_width))
+    new_y=$((y - display_height))
+
+    # If we would move off the left-most monitor, we set it to the right one.
+    if [ "$(( new_x + width / 2))" -lt 0 ]; then
+        new_x=$((new_x + screen_width))
+    fi
+    if [ "$((new_y + height / 2))" -lt 0 ]; then
+        new_y=$((new_y + screen_height))
+    fi
 fi
 
 # Don't move off the left side.

@@ -7,6 +7,10 @@ in this script. Sweet! Glad it can help others.
 
 I mapped `ctrl+alt+n` to exectute this script.
 
+To move the window the other way, pass `--previous` (or `-p`); `--next` (or `-n`)
+is the default. For example, map `ctrl+alt+n` to `move-to-next-monitor` and
+`ctrl+alt+p` to `move-to-next-monitor --previous`.
+
 ## Usage
 
 ```

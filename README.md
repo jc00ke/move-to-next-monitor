@@ -19,17 +19,49 @@ chmod +x move-to-next-monitor
 mv move-to-next-monitor /somewhere/in/your/$PATH
 ```
 
+## Monitor geometry
+
+The script uses each monitor's RandR rectangle instead of assuming that every
+monitor has the dimensions of the first one. It keeps the window's offset from
+the source monitor and clamps that offset to the destination. Windows larger
+than the destination are placed at its top-left corner without resizing.
+
+Monitors cycle from left to right, then top to bottom when their X coordinates
+match. The source monitor is the one containing the largest part of the window;
+fully off-screen windows use the nearest monitor centre. Mirrored rectangles
+are counted once, and one-monitor configurations are left untouched.
+
+This is an X11 tool. It requires `xrandr`; RandR 1.5 monitor objects are used
+when available, with connected-output geometry as a fallback for older servers.
+See the [xrandr manual](https://manpages.debian.org/bookworm/x11-xserver-utils/xrandr.1.en.html).
+
+## Testing
+
+```sh
+python3 test/geometry-test.py -v
+shellcheck move-to-next-monitor test/randr-xvfb-test.sh
+bash test/randr-xvfb-test.sh
+```
+
+The deterministic tests exercise the shell script with command fixtures. The
+integration test starts a private Xvfb with 1280x720 and 1024x900 RandR monitors,
+Openbox and an xmessage window. It checks both directions, wrap-around and
+maximization. It requires access to local X11 sockets.
+
+The earlier `test/xephyr-test.sh` uses Xinerama; its topology may not expose two
+RandR monitors, so use the new RandR integration test for this implementation.
+
 ## Dependencies
 
 ```
 # Xubuntu 18.04
-sudo apt install xdotool wmctrl
+sudo apt install xdotool wmctrl x11-xserver-utils x11-utils
 
 # Xubuntu 16.04
-sudo apt-get install xdotool
+sudo apt-get install xdotool wmctrl x11-xserver-utils x11-utils
 
 # Arch based (Manjaro / Endeavour OS)
-sudo pacman -S xorg-xwininfo
+sudo pacman -S xorg-xwininfo xorg-xrandr xorg-xprop
 sudo pacman -S xdotool
 sudo pacman -S wmctrl
 ```

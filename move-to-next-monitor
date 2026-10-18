@@ -1,6 +1,21 @@
-#!/usr/bin/env bash
-# Move the active X11 window between monitors using their RandR geometry.
-# Monitor order is left to right, then top to bottom for equal X coordinates.
+#!/bin/bash
+#
+# Move the current window to the next monitor.
+# With --previous (or -p), move it to the previous monitor instead.
+#
+# Also works only on one X screen (which is the most common case).
+#
+# Props to
+# http://icyrock.com/blog/2012/05/xubuntu-moving-windows-between-monitors/
+#
+# Unfortunately, both "xdotool getwindowgeometry --shell $window_id" and
+# checking "-geometry" of "xwininfo -id $window_id" are not sufficient, as
+# the first command does not respect panel/decoration offsets and the second
+# will sometimes give a "-0-0" geometry. This is why we resort to "xwininfo".
+#
+# RandR geometry is used to account for monitors with different sizes and
+# positions.
+
 set -euo pipefail
 export LC_ALL=C
 

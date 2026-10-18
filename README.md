@@ -14,10 +14,14 @@ is the default. For example, map `ctrl+alt+n` to `move-to-next-monitor` and
 ## Usage
 
 ```
-wget https://raw.githubusercontent.com/jc00ke/move-to-next-monitor/master/move-to-next-monitor
-chmod +x move-to-next-monitor
-sudo install -m 755 move-to-next-monitor /usr/local/bin/move-to-next-monitor
+wget -O move-to-next-monitor \
+    https://raw.githubusercontent.com/jc00ke/move-to-next-monitor/master/move-to-next-monitor
+install -D -m 755 move-to-next-monitor \
+    "$HOME/.local/bin/move-to-next-monitor"
 ```
+
+Make sure `$HOME/.local/bin` is in your `PATH`, or change the install
+destination to a directory that is.
 
 ## Monitor geometry
 

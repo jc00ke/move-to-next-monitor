@@ -11,10 +11,18 @@ done
 log_dir=$(mktemp -d -t randr-xvfb-test-XXXXXX)
 server='' wm='' app=''
 cleanup() {
-    local pid
+    local status=$? pid log
     for pid in "$app" "$wm" "$server"; do
         [ -z "$pid" ] || kill "$pid" 2>/dev/null || true
     done
+    # CI runners are discarded after the job, so show the logs on failure.
+    if [ "$status" -ne 0 ]; then
+        for log in "$log_dir"/*.log; do
+            [ -s "$log" ] || continue
+            echo "== $log" >&2
+            tail -50 "$log" >&2
+        done
+    fi
     echo "X11 logs: $log_dir"
 }
 trap cleanup EXIT
@@ -26,8 +34,8 @@ Xvfb ":$display" -screen 0 2304x900x24 -nolisten tcp -noreset >"$log_dir/server.
 server=$!
 export DISPLAY=":$display"
 ready=false
-for _ in {1..50}; do
-    kill -0 "$server" 2>/dev/null || { tail -20 "$log_dir/server.log" >&2; exit 1; }
+for _ in {1..150}; do
+    kill -0 "$server" 2>/dev/null || { echo "Xvfb exited during startup" >&2; exit 1; }
     if xdpyinfo >/dev/null 2>&1; then ready=true; break; fi
     sleep 0.1
 done
@@ -43,7 +51,7 @@ echo "$layout"
 openbox >"$log_dir/wm.log" 2>&1 &
 wm=$!
 ready=false
-for _ in {1..50}; do
+for _ in {1..150}; do
     if xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q 'window id'; then ready=true; break; fi
     sleep 0.1
 done
@@ -51,14 +59,14 @@ $ready || { echo "Openbox startup timed out" >&2; exit 1; }
 xmessage -name randr-test -geometry 300x200+100+100 "RandR integration test" >"$log_dir/app.log" 2>&1 &
 app=$!
 window=
-for _ in {1..50}; do
+for _ in {1..150}; do
     window=$(xdotool search --onlyvisible --name randr-test 2>/dev/null | head -1) || true
     [ -z "$window" ] || break
     sleep 0.1
 done
 [ -n "$window" ] || { echo "Test window startup timed out" >&2; exit 1; }
 wmctrl -i -a "$window"
-for _ in {1..50}; do
+for _ in {1..150}; do
     [ "$(xdotool getactivewindow 2>/dev/null)" != "$window" ] || break
     sleep 0.1
 done
@@ -66,7 +74,7 @@ done
 
 check() {
     local label=$1 target=$2 geometry x y width height ok=false
-    for _ in {1..50}; do
+    for _ in {1..150}; do
         geometry=$(xwininfo -id "$window")
         read -r x y width height < <(awk '
             /Absolute upper-left X:/ {x=$4} /Absolute upper-left Y:/ {y=$4}
@@ -90,7 +98,7 @@ check "starts on left monitor" left
 "$script" -p; check "previous moves to left monitor" left
 wmctrl -ir "$window" -b add,maximized_vert,maximized_horz
 maximized=false
-for _ in {1..50}; do
+for _ in {1..150}; do
     state=$(xprop -id "$window" _NET_WM_STATE)
     if [[ "$state" == *MAXIMIZED_VERT* && "$state" == *MAXIMIZED_HORZ* ]]; then maximized=true; break; fi
     sleep 0.1

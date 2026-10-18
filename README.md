@@ -52,6 +52,19 @@ integration test starts a private Xvfb with 1280x720 and 1024x900 RandR monitors
 Openbox and an xmessage window. It checks both directions, wrap-around and
 maximization. It requires access to local X11 sockets.
 
+CI runs the geometry and integration tests on Ubuntu and in an Arch Linux
+container. The Arch job installs the packages listed under
+[Dependencies](#dependencies), so those instructions are tested too. The
+integration test also needs Xvfb, Openbox, xmessage and xdpyinfo:
+
+```text
+# Ubuntu
+sudo apt install xvfb openbox x11-utils
+
+# Arch
+sudo pacman -S xorg-server-xvfb openbox xorg-xmessage xorg-xdpyinfo
+```
+
 ## Dependencies
 
 ```text

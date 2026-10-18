@@ -2,6 +2,8 @@
 # Exercise the actual script with deterministic X11 command fixtures.
 set -euo pipefail
 export LC_ALL=C
+# Fixture settings are opt-in per case; ignore any inherited from the shell.
+unset "${!FIXTURE_@}"
 cd "$(dirname "$0")/.."
 script="$PWD/move-to-next-monitor"
 fixtures=$(mktemp -d -t geometry-test-XXXXXX)

@@ -12,91 +12,118 @@
 # checking "-geometry" of "xwininfo -id $window_id" are not sufficient, as
 # the first command does not respect panel/decoration offsets and the second
 # will sometimes give a "-0-0" geometry. This is why we resort to "xwininfo".
+#
+# RandR geometry is used to account for monitors with different sizes and
+# positions.
+
+set -euo pipefail
+export LC_ALL=C
 
 usage() {
     echo "Usage: $(basename "$0") [--next | --previous]"
     echo "Move the active window to the next (default) or previous monitor."
 }
 
-direction=next
+direction=1
 case "${1:-}" in
     ""|-n|--next) ;;
-    -p|--previous) direction=previous ;;
+    -p|--previous) direction=-1 ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; exit 1 ;;
 esac
+[ "$#" -le 1 ] || { usage >&2; exit 1; }
 
-screen_width=$(xdpyinfo | awk '/dimensions:/ { print $2; exit }' | cut -d"x" -f1)
-screen_height=$(xdpyinfo | awk '/dimensions:/ { print $2; exit }' | cut -d"x" -f2)
-display_width=$(xdotool getdisplaygeometry | cut -d" " -f1)
-display_height=$(xdotool getdisplaygeometry | cut -d" " -f2)
+# RandR 1.5 monitor objects include logical monitors. Fall back to connected
+# output geometry for servers which only support earlier RandR versions.
+monitor_info=$(xrandr --listactivemonitors 2>/dev/null) || monitor_info=$(xrandr --query)
+monitors=$(awk '
+    / connected / || /^[[:space:]]*[0-9]+:/ {
+        for (i = 1; i <= NF; i++) {
+            geom = $i
+            gsub(/\/[0-9]+/, "", geom)
+            if (geom ~ /^[0-9]+x[0-9]+[+-][0-9]+[+-][0-9]+$/ && !seen[geom]++) {
+                gsub(/x/, " ", geom)
+                gsub(/\+/, " +", geom)
+                gsub(/-/, " -", geom)
+                split(geom, coord)
+                print coord[1]+0, coord[2]+0, coord[3]+0, coord[4]+0
+            }
+        }
+    }' <<<"$monitor_info" | sort -k3,3n -k4,4n)
+count=$(awk 'NF {n++} END {print n+0}' <<<"$monitors")
+if [ "$count" -eq 0 ]; then
+    echo "No active RandR monitors found." >&2
+    exit 1
+fi
+[ "$count" -gt 1 ] || exit 0
+
 window_id=$(xdotool getactivewindow)
-
-# Remember if it was maximized.
-window_horz_maxed=$(xprop -id "$window_id" _NET_WM_STATE | grep '_NET_WM_STATE_MAXIMIZED_HORZ')
-window_vert_maxed=$(xprop -id "$window_id" _NET_WM_STATE | grep '_NET_WM_STATE_MAXIMIZED_VERT')
-
-# Un-maximize current window so that we can move it
-wmctrl -ir "$window_id" -b remove,maximized_vert,maximized_horz
-
-# Read window position
-x=$(xwininfo -id "$window_id" | awk '/Absolute upper-left X:/ { print $4 }')
-y=$(xwininfo -id "$window_id" | awk '/Absolute upper-left Y:/ { print $4 }')
-
-# Subtract any offsets caused by panels or window decorations
-x_offset=$(xwininfo -id "$window_id" | awk '/Relative upper-left X:/ { print $4 }')
-y_offset=$(xwininfo -id "$window_id" | awk '/Relative upper-left Y:/ { print $4 }')
-x=$(( x - x_offset))
-y=$(( y - y_offset))
-
-width=$(xdotool getwindowgeometry "$window_id" | awk '/Geometry:/ { print $2 }'|cut -d"x" -f1)
-height=$(xdotool getwindowgeometry "$window_id" | awk '/Geometry:/ { print $2 }'|cut -d"x" -f2)
-
-if [ "$direction" = next ]; then
-    # Compute new position
-    new_x=$((x + display_width))
-    new_y=$((y + display_height))
-
-    # If we would move off the right-most monitor, we set it to the left one.
-    # We also respect the window's width here: moving a window off more than half its width won't happen.
-    if [ "$(( new_x + width / 2))" -gt "$screen_width" ]; then
-        new_x=$((new_x - screen_width))
+state=$(xprop -id "$window_id" _NET_WM_STATE)
+restore=()
+[[ "$state" != *'_NET_WM_STATE_MAXIMIZED_HORZ'* ]] || restore+=(maximized_horz)
+[[ "$state" != *'_NET_WM_STATE_MAXIMIZED_VERT'* ]] || restore+=(maximized_vert)
+restore_state() {
+    if [ "${#restore[@]}" -gt 0 ]; then
+        local flags
+        flags=$(IFS=,; echo "${restore[*]}")
+        wmctrl -ir "$window_id" -b "add,$flags"
     fi
-    if [ "$((new_y + height / 2))" -gt "$screen_height" ]; then
-        new_y=$((new_y - screen_height))
-    fi
-else
-    # Compute new position
-    new_x=$((x - display_width))
-    new_y=$((y - display_height))
-
-    # If we would move off the left-most monitor, we set it to the right one.
-    if [ "$(( new_x + width / 2))" -lt 0 ]; then
-        new_x=$((new_x + screen_width))
-    fi
-    if [ "$((new_y + height / 2))" -lt 0 ]; then
-        new_y=$((new_y + screen_height))
+}
+trap restore_state EXIT
+if [ "${#restore[@]}" -gt 0 ]; then
+    wmctrl -ir "$window_id" -b remove,maximized_vert,maximized_horz
+    # Window manager requests are asynchronous; wait before reading geometry.
+    for _ in {1..40}; do
+        state=$(xprop -id "$window_id" _NET_WM_STATE)
+        [[ "$state" == *'_NET_WM_STATE_MAXIMIZED_'* ]] || break
+        sleep 0.05
+    done
+    if [[ "$state" == *'_NET_WM_STATE_MAXIMIZED_'* ]]; then
+        echo "Window manager did not unmaximize the active window." >&2
+        exit 1
     fi
 fi
 
-# Don't move off the left side.
-if [ "$new_x" -lt 0 ]; then
-    new_x=0
+# Obtain a single snapshot; relative coordinates account for decorations.
+geometry=$(xwininfo -id "$window_id")
+read -r x y width height < <(awk '
+    /Absolute upper-left X:/ {x=$4}
+    /Absolute upper-left Y:/ {y=$4}
+    /Relative upper-left X:/ {dx=$4}
+    /Relative upper-left Y:/ {dy=$4}
+    /^[[:space:]]*Width:/ {w=$2}
+    /^[[:space:]]*Height:/ {h=$2}
+    END {print x-dx, y-dy, w, h}' <<<"$geometry")
+[[ "$width" =~ ^[1-9][0-9]*$ && "$height" =~ ^[1-9][0-9]*$ ]] || {
+    echo "Cannot read the active window geometry." >&2
+    exit 1
+}
+# Include the frame in the bounds when the window manager exposes its extents.
+extents=$(xprop -id "$window_id" _NET_FRAME_EXTENTS)
+if [[ "$extents" =~ =[[:space:]]*([0-9]+),[[:space:]]*([0-9]+),[[:space:]]*([0-9]+),[[:space:]]*([0-9]+) ]]; then
+    width=$((width + BASH_REMATCH[1] + BASH_REMATCH[2]))
+    height=$((height + BASH_REMATCH[3] + BASH_REMATCH[4]))
 fi
 
-# Don't move off the bottom
-if [ "$new_y" -lt 0 ]; then
-    new_y=0
-fi
-
-# Move the window
-xdotool windowmove "$window_id" "$new_x" "$new_y"
-
-# Maximize window again, if it was before
-if [ -n "${window_horz_maxed}" ] && [ -n "${window_vert_maxed}" ]; then
-    wmctrl -ir "$window_id" -b add,maximized_vert,maximized_horz
-elif [ -n  "${window_horz_maxed}" ]; then
-    wmctrl -ir "$window_id" -b add,maximized_horz
-elif [ -n  "${window_vert_maxed}" ]; then
-    wmctrl -ir "$window_id" -b add,maximized_vert
-fi
+# Select the monitor containing the greatest part of the window. If the window
+# is outside every monitor, use the nearest monitor centre. Keep its relative
+# offset on the destination, clamping it so that the frame stays visible.
+position=$(awk -v x="$x" -v y="$y" -v w="$width" -v h="$height" -v step="$direction" '
+    function min(a,b) {return a<b?a:b}
+    function max(a,b) {return a>b?a:b}
+    NF == 4 {
+        n++; mw[n]=$1; mh[n]=$2; mx[n]=$3; my[n]=$4
+        area=max(0,min(x+w,$3+$1)-max(x,$3))*max(0,min(y+h,$4+$2)-max(y,$4))
+        distance=(x+w/2-($3+$1/2))^2+(y+h/2-($4+$2/2))^2
+        if (n==1 || area>best || (area==best && distance<nearest)) {
+            current=n; best=area; nearest=distance
+        }
+    }
+    END {
+        target=(current-1+step+n)%n+1
+        nx=mx[target]+max(0,min(x-mx[current],max(0,mw[target]-w)))
+        ny=my[target]+max(0,min(y-my[current],max(0,mh[target]-h)))
+        printf "%.0f %.0f\n",nx,ny
+    }' <<<"$monitors")
+read -r new_x new_y <<<"$position"
+xdotool windowmove -- "$window_id" "$new_x" "$new_y"

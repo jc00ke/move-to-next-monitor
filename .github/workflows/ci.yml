@@ -39,33 +39,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # xvfb:              X server for the RandR test, and host display for Xephyr
-      # xauth:             needed by xvfb-run
-      # xserver-xephyr:    nested X server providing two Xinerama monitors
+      # xvfb:              headless X server
       # openbox:           minimal EWMH window manager
-      # x11-apps:          xeyes, the Xephyr test window
       # x11-xserver-utils: xrandr
-      # x11-utils:         xwininfo, xprop, xdpyinfo, and xmessage (the RandR test window)
+      # x11-utils:         xwininfo, xprop, xdpyinfo, and xmessage (the test window)
       # xdotool, wmctrl:   script dependencies
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            xvfb xauth xserver-xephyr openbox x11-apps \
-            x11-xserver-utils x11-utils xdotool wmctrl
+            xvfb openbox x11-xserver-utils x11-utils xdotool wmctrl
 
       # Starts its own Xvfb with two unequal RandR monitors.
       - name: Run RandR integration test
         run: test/randr-xvfb-test.sh
-
-      # Xephyr opens a 2560x720 window, so the host screen must be at least that big.
-      # The test exits 0 with SKIP when Xephyr exposes fewer than two RandR monitors,
-      # so surface that as a warning instead of a silent pass.
-      - name: Run Xephyr integration test
-        if: ${{ !cancelled() }}
-        run: |
-          xvfb-run -a -s "-screen 0 2560x1440x24" test/xephyr-test.sh | tee xephyr.log
-          if grep -q '^SKIP' xephyr.log; then
-            echo "::warning title=Xephyr test skipped::$(grep '^SKIP' xephyr.log)"
-          fi
-        shell: bash

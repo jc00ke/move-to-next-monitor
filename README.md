@@ -52,10 +52,6 @@ integration test starts a private Xvfb with 1280x720 and 1024x900 RandR monitors
 Openbox and an xmessage window. It checks both directions, wrap-around and
 maximization. It requires access to local X11 sockets.
 
-The legacy `test/xephyr-test.sh` uses Xinerama and skips when Xephyr does not
-expose two active RandR monitors. Use the RandR integration test above for this
-implementation.
-
 ## Dependencies
 
 ```text

@@ -9,8 +9,9 @@ script="$PWD/move-to-next-monitor"
 fixtures=$(mktemp -d -t geometry-test-XXXXXX)
 trap 'rm -rf "$fixtures"' EXIT
 
-# One mock, symlinked as each X11 command. It logs every call to "calls" and
-# keeps the window's _NET_WM_STATE in "state", both next to the symlinks.
+# One mock, symlinked as each X11 command and as sleep, so polling is instant.
+# It logs every call to "calls" and keeps the window's _NET_WM_STATE in
+# "state", both next to the symlinks.
 cat >"$fixtures/mock" <<'EOF'
 #!/usr/bin/env bash
 command=${0##*/} dir=${0%/*} last=${!#}
@@ -37,7 +38,7 @@ case $command in
         fi ;;
     wmctrl)
         if [[ $last == remove,* ]]; then
-            : >"$dir/state"
+            [ -n "${FIXTURE_STAY_MAXIMIZED:-}" ] || : >"$dir/state"
         else
             flags=$(tr '[:lower:]' '[:upper:]' <<<"${last#*,}")
             echo "_NET_WM_STATE_${flags//,/, _NET_WM_STATE_}" >"$dir/state"
@@ -45,7 +46,7 @@ case $command in
 esac
 EOF
 chmod +x "$fixtures/mock"
-for command in xrandr xdotool xwininfo xprop wmctrl; do
+for command in xrandr xdotool xwininfo xprop wmctrl sleep; do
     ln -s mock "$fixtures/$command"
 done
 export PATH="$fixtures:$PATH"
@@ -132,6 +133,9 @@ done
 FIXTURE_WM_STATE=_NET_WM_STATE_MAXIMIZED_HORZ FIXTURE_MOVE_FAIL=1 run "$side_by_side" "$window"
 check "failed move restores maximization and returns its error" \
     "$status|$(<"$fixtures/state")" "7|_NET_WM_STATE_MAXIMIZED_HORZ"
+FIXTURE_WM_STATE=_NET_WM_STATE_MAXIMIZED_HORZ FIXTURE_STAY_MAXIMIZED=1 run "$side_by_side" "$window"
+check "window that stays maximized is not moved" "$status|$moves|$(<"$fixtures/stderr")" \
+    "1||Window manager did not unmaximize the active window."
 
 run "Monitors: 0" "$window" --bogus
 check "unknown option does not query display" "$status|$calls" "1|"

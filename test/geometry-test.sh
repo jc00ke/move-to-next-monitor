@@ -90,6 +90,7 @@ expect_move() {
 
 side_by_side=$(monitors 1280 720 0 0 1024 900 1280 0)
 large_small=$(monitors 1920 1080 0 0 1024 768 1920 0)
+three_wide=$(monitors 800 600 1800 0 1000 700 800 0 800 600 0 0)
 window="100 100 300 200"
 
 expect_move "unequal side-by-side monitors" "$side_by_side" "$window" "1380 100"
@@ -99,8 +100,8 @@ expect_move "clamps window to smaller destination" "$large_small" "1500 800 400 
 expect_move "vertical layout" "$(monitors 1280 720 0 0 1024 900 0 720)" "$window" "100 820"
 expect_move "offset destination" "$(monitors 1280 720 0 180 1024 900 1280 0)" "100 280 300 200" "1380 100"
 expect_move "negative monitor origin" "$(monitors 1280 720 0 0 1024 900 -1024 0)" "$window" "-924 100" -p
-expect_move "three monitors use spatial order" \
-    "$(monitors 800 600 1800 0 1000 700 800 0 800 600 0 0)" "900 100 200 100" "1900 100" -n
+expect_move "three monitors use spatial order" "$three_wide" "900 100 200 100" "1900 100" -n
+expect_move "previous moves the other way on three monitors" "$three_wide" "900 100 200 100" "100 100" -p
 expect_move "overlap selects largest window area" "$side_by_side" "1200 100 400 200" "0 100"
 expect_move "offscreen window uses nearest monitor" "$side_by_side" "2400 100 300 200" "980 100"
 expect_move "oversized window anchors at destination origin" "$side_by_side" "100 100 1500 1000" "1280 0"

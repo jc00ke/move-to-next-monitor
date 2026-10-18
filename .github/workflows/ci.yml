@@ -52,3 +52,30 @@ jobs:
       # Starts its own Xvfb with two unequal RandR monitors.
       - name: Run RandR integration test
         run: test/randr-xvfb-test.sh
+
+  # Same tests on Arch, which ships gawk (Ubuntu uses mawk) and newer X11 packages.
+  # GitHub has no Arch runners, so the steps run in the official Arch container.
+  arch:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    timeout-minutes: 10
+
+    steps:
+      # The first line matches the README's Arch instructions.
+      # xorg-server-xvfb:  headless X server
+      # openbox:           minimal EWMH window manager
+      # xorg-xmessage:     the test window
+      # xorg-xdpyinfo:     X server readiness check
+      # git:               lets actions/checkout clone instead of fetching a tarball
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm --needed xorg-xwininfo xorg-xrandr xorg-xprop xdotool wmctrl
+          pacman -S --noconfirm --needed xorg-server-xvfb openbox xorg-xmessage xorg-xdpyinfo git
+
+      - uses: actions/checkout@v5
+
+      - name: Run geometry tests
+        run: test/geometry-test.sh
+
+      - name: Run RandR integration test
+        run: test/randr-xvfb-test.sh

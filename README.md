@@ -13,15 +13,15 @@ is the default. For example, map `ctrl+alt+n` to `move-to-next-monitor` and
 
 ## Usage
 
-```
-wget https://raw.githubusercontent.com/jc00ke/move-to-next-monitor/master/move-to-next-monitor
+```text
+wget https://raw.githubusercontent.com/jc00ke/move-to-next-monitor/main/move-to-next-monitor
 chmod +x move-to-next-monitor
 mv move-to-next-monitor /somewhere/in/your/$PATH
 ```
 
 ## Dependencies
 
-```
+```text
 # Xubuntu 18.04
 sudo apt install xdotool wmctrl
 

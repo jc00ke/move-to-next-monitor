@@ -49,8 +49,9 @@ bash test/randr-xvfb-test.sh
 
 The deterministic tests exercise the shell script with command fixtures. The
 integration test starts a private Xvfb with 1280x720 and 1024x900 RandR monitors,
-Openbox and an xmessage window. It checks both directions, wrap-around and
-maximization. It requires access to local X11 sockets.
+Openbox and an xmessage window. It checks both directions, wrap-around,
+maximization and that desktop windows are left in place. It requires access to
+local X11 sockets.
 
 CI runs the geometry and integration tests on Ubuntu and in an Arch Linux
 container. The Arch job installs the packages listed under

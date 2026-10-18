@@ -33,6 +33,8 @@ case $command in
     xprop)
         if [ "$last" = _NET_FRAME_EXTENTS ]; then
             echo "_NET_FRAME_EXTENTS(CARDINAL) = ${FIXTURE_EXTENTS:-0, 0, 0, 0}"
+        elif [ "$last" = _NET_WM_WINDOW_TYPE ]; then
+            echo "_NET_WM_WINDOW_TYPE(ATOM) = ${FIXTURE_WINDOW_TYPE:-_NET_WM_WINDOW_TYPE_NORMAL}"
         else
             echo "_NET_WM_STATE(ATOM) = $(<"$dir/state")"
         fi ;;
@@ -130,6 +132,9 @@ for flags in _NET_WM_STATE_MAXIMIZED_HORZ _NET_WM_STATE_MAXIMIZED_VERT \
     FIXTURE_WM_STATE=$flags run "$side_by_side" "$window"
     check "restores $flags" "$status|$(<"$fixtures/state")" "0|$flags"
 done
+FIXTURE_WINDOW_TYPE=_NET_WM_WINDOW_TYPE_DESKTOP FIXTURE_WM_STATE=_NET_WM_STATE_MAXIMIZED_HORZ \
+    run "$side_by_side" "$window"
+check "desktop window is not touched" "$status|$(grep -c '^wmctrl\|^xdotool windowmove' <<<"$calls")" "0|0"
 FIXTURE_WM_STATE=_NET_WM_STATE_MAXIMIZED_HORZ FIXTURE_MOVE_FAIL=1 run "$side_by_side" "$window"
 check "failed move restores maximization and returns its error" \
     "$status|$(<"$fixtures/state")" "7|_NET_WM_STATE_MAXIMIZED_HORZ"

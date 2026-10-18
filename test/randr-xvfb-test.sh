@@ -108,4 +108,8 @@ $maximized || { echo "Window did not maximize" >&2; exit 1; }
 state=$(xprop -id "$window" _NET_WM_STATE)
 [[ "$state" == *MAXIMIZED_VERT* && "$state" == *MAXIMIZED_HORZ* ]] || { echo "Maximization lost" >&2; exit 1; }
 "$script" --previous; check "maximized window returns to left monitor" left
+xprop -id "$window" -f _NET_WM_WINDOW_TYPE 32a -set _NET_WM_WINDOW_TYPE _NET_WM_WINDOW_TYPE_DESKTOP
+"$script"; check "desktop window stays on left monitor" left
+xprop -id "$window" -remove _NET_WM_WINDOW_TYPE
+"$script"; check "normal window moves again" right
 echo "All unequal-monitor X11 integration tests passed."

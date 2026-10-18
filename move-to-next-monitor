@@ -58,6 +58,11 @@ fi
 [ "$count" -gt 1 ] || exit 0
 
 window_id=$(xdotool getactivewindow)
+# The desktop window (e.g. xfdesktop) is active when nothing else is focused.
+# Moving it would leave its monitor without a desktop to click or redraw.
+if [[ "$(xprop -id "$window_id" _NET_WM_WINDOW_TYPE)" == *_NET_WM_WINDOW_TYPE_DESKTOP* ]]; then
+    exit 0
+fi
 state=$(xprop -id "$window_id" _NET_WM_STATE)
 restore=()
 [[ "$state" != *'_NET_WM_STATE_MAXIMIZED_HORZ'* ]] || restore+=(maximized_horz)

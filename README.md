@@ -42,8 +42,8 @@ See the [xrandr manual](https://manpages.debian.org/bookworm/x11-xserver-utils/x
 ## Testing
 
 ```sh
-python3 test/geometry-test.py -v
-shellcheck move-to-next-monitor test/randr-xvfb-test.sh
+bash test/geometry-test.sh
+shellcheck move-to-next-monitor test/*.sh
 bash test/randr-xvfb-test.sh
 ```
 

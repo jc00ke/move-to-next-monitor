@@ -21,7 +21,6 @@ jobs:
           shellcheck move-to-next-monitor test/*.sh
 
   # Runs the script against mocked X11 commands, so no X server is needed.
-  # python3 is preinstalled on GitHub's Ubuntu runners.
   geometry:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -30,7 +29,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Run geometry tests
-        run: python3 test/geometry-test.py -v
+        run: test/geometry-test.sh
 
   integration:
     runs-on: ubuntu-latest

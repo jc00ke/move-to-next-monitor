@@ -4,7 +4,7 @@
 # (Xephyr + Xinerama), a minimal window manager (openbox) and a test window (xeyes).
 # Xephyr opens a 2560x720 window on the current desktop while the test runs.
 #
-# Dependencies: Xephyr, openbox, xeyes, plus the script's own
+# Dependencies: Xephyr, xrandr, openbox, xeyes, plus the script's own
 # (xdotool, wmctrl, xwininfo, xprop, xdpyinfo).
 # Usage: test/xephyr-test.sh
 
@@ -21,6 +21,15 @@ app=
 export DISPLAY=":$display"
 trap 'kill $wm $app $xephyr 2>/dev/null' EXIT
 for _ in $(seq 50); do xdpyinfo >/dev/null 2>&1 && break; sleep 0.1; done
+if ! command -v xrandr >/dev/null; then
+    echo "Missing dependency: xrandr" >&2
+    exit 1
+fi
+monitor_count=$(xrandr --listactivemonitors | awk '/^Monitors:/ {print $2}')
+if [ "${monitor_count:-0}" -lt 2 ]; then
+    echo "SKIP Xephyr does not expose two active RandR monitors."
+    exit 0
+fi
 openbox >/dev/null 2>&1 &
 wm=$!
 for _ in $(seq 50); do xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q 'window id' && break; sleep 0.1; done

@@ -16,7 +16,7 @@ is the default. For example, map `ctrl+alt+n` to `move-to-next-monitor` and
 ```
 wget https://raw.githubusercontent.com/jc00ke/move-to-next-monitor/master/move-to-next-monitor
 chmod +x move-to-next-monitor
-mv move-to-next-monitor /somewhere/in/your/$PATH
+sudo install -m 755 move-to-next-monitor /usr/local/bin/move-to-next-monitor
 ```
 
 ## Monitor geometry
@@ -48,8 +48,9 @@ integration test starts a private Xvfb with 1280x720 and 1024x900 RandR monitors
 Openbox and an xmessage window. It checks both directions, wrap-around and
 maximization. It requires access to local X11 sockets.
 
-The earlier `test/xephyr-test.sh` uses Xinerama; its topology may not expose two
-RandR monitors, so use the new RandR integration test for this implementation.
+The legacy `test/xephyr-test.sh` uses Xinerama and skips when Xephyr does not
+expose two active RandR monitors. Use the RandR integration test above for this
+implementation.
 
 ## Dependencies
 

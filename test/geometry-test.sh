@@ -60,7 +60,8 @@ monitors() {
 }
 
 # run LAYOUT "X Y WIDTH HEIGHT" [ARGS...] runs the script against the fixtures,
-# starting with FIXTURE_WM_STATE, and sets $status, $calls and $moves.
+# starting with FIXTURE_WM_STATE, and sets $status, $calls and $moves (the
+# arguments of each "xdotool windowmove" call).
 run() {
     echo "${FIXTURE_WM_STATE:-}" >"$fixtures/state"
     : >"$fixtures/calls"
@@ -68,7 +69,7 @@ run() {
     FIXTURE_MONITORS=$1 FIXTURE_GEOMETRY=$2 bash "$script" "${@:3}" \
         >/dev/null 2>"$fixtures/stderr" || status=$?
     calls=$(<"$fixtures/calls")
-    moves=$(awk '$1 == "xdotool" && $2 == "windowmove" {print $(NF-1), $NF}' <<<"$calls")
+    moves=$(sed -n 's/^xdotool windowmove //p' <<<"$calls")
 }
 
 failures=0
@@ -86,7 +87,7 @@ check() {
 # expect_move LABEL LAYOUT "X Y WIDTH HEIGHT" "NEW_X NEW_Y" [ARGS...]
 expect_move() {
     run "$2" "$3" "${@:5}"
-    check "$1" "$status $moves" "0 $4"
+    check "$1" "$status $moves" "0 -- 123 $4"
 }
 
 side_by_side=$(monitors 1280 720 0 0 1024 900 1280 0)

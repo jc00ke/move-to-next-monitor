@@ -23,8 +23,9 @@ case $command in
         fi ;;
     xwininfo)
         read -r x y w h <<<"$FIXTURE_GEOMETRY"
+        read -r dx dy <<<"${FIXTURE_RELATIVE:-0 0}"
         printf 'Absolute upper-left X: %s\nAbsolute upper-left Y: %s\n' "$x" "$y"
-        printf 'Relative upper-left X: 0\nRelative upper-left Y: 0\n'
+        printf 'Relative upper-left X: %s\nRelative upper-left Y: %s\n' "$dx" "$dy"
         printf 'Width: %s\nHeight: %s\n' "$w" "$h" ;;
     xprop)
         if [ "$last" = _NET_FRAME_EXTENTS ]; then
@@ -107,6 +108,8 @@ expect_move "offscreen window uses nearest monitor" "$side_by_side" "2400 100 30
 expect_move "oversized window anchors at destination origin" "$side_by_side" "100 100 1500 1000" "1280 0"
 FIXTURE_EXTENTS="5, 5, 30, 5" \
     expect_move "frame extents count towards bounds" "$large_small" "1500 800 400 300" "2534 433"
+FIXTURE_RELATIVE="8 31" \
+    expect_move "decoration offset locates the frame" "$side_by_side" "108 131 300 200" "1380 100"
 FIXTURE_OLD_RANDR=1 expect_move "RandR query fallback ignores disconnected and inactive outputs" \
     "A connected primary 1280x720+0+0
 B connected 1024x900+1280+0
